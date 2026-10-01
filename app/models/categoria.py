@@ -23,5 +23,9 @@ class Categoria(Base):
     )
     archivada: Mapped[bool] = mapped_column(Boolean, default=False)
 
+    @property
+    def predeterminada(self) -> bool:
+        return self.usuario_id is None
+
     usuario = relationship("Usuario", back_populates="categorias")
     subcategorias = relationship("Categoria", backref="padre", remote_side=[id])

@@ -6,6 +6,8 @@ COLOR_HEX = r"^#[0-9A-Fa-f]{6}$"
 
 
 class CategoriaCrear(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     nombre: str = Field(min_length=1, max_length=60)
     tipo: TipoCategoria
     icono: str | None = Field(default=None, max_length=40)
@@ -14,6 +16,8 @@ class CategoriaCrear(BaseModel):
 
 
 class CategoriaActualizar(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     nombre: str | None = Field(default=None, min_length=1, max_length=60)
     icono: str | None = Field(default=None, max_length=40)
     color: str | None = Field(default=None, pattern=COLOR_HEX)

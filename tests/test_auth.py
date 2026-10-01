@@ -3,7 +3,7 @@ from datetime import datetime, timedelta, timezone
 import jwt
 import pytest
 from pydantic import ValidationError
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.core.config import Settings, settings
 from app.core.security import ALGORITMO, crear_token, hashear_password, leer_token, verificar_password
@@ -92,25 +92,18 @@ def test_password_se_guarda_hasheada():
     assert leer_token(crear_token(7)) == 7 and leer_token("x") is None
 
 
-def test_categorias_default_son_idempotentes(client):
-    from app.core.database import get_db
-    from app.main import app
-
-    db = next(app.dependency_overrides[get_db]())
-    total = db.scalar(select(__import__("sqlalchemy").func.count()).select_from(Categoria))
+def test_categorias_default_son_idempotentes(db):
+    total = db.scalar(select(func.count()).select_from(Categoria))
     assert total == len(CATEGORIAS_DEFAULT)
     assert sembrar_categorias_default(db) == 0
     tipos = {c.tipo for c in db.scalars(select(Categoria))}
     assert tipos == {TipoCategoria.GASTO, TipoCategoria.INGRESO}
 
 
-def test_usuario_nuevo_recibe_cuenta_efectivo(client):
-    from app.core.database import get_db
-    from app.main import app
+def test_usuario_nuevo_recibe_cuenta_efectivo(client, db):
     from app.models import Cuenta
 
     registrar(client)
-    db = next(app.dependency_overrides[get_db]())
     cuentas = db.scalars(select(Cuenta)).all()
     assert [c.nombre for c in cuentas] == ["Efectivo"]
 
