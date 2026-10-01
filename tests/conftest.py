@@ -15,17 +15,26 @@ from app.main import app as fastapi_app
 from app.services.categorias_default import sembrar_categorias_default
 
 
-@pytest.fixture()
-def session_factory():
-    """BD SQLite en memoria, aislada por prueba, con las categorías predeterminadas."""
-    engine = create_engine(
-        "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
-    )
+def _motor_de_pruebas():
+    """Por defecto SQLite en memoria (rápido). Con TEST_DATABASE_URL se prueba contra otra base,
+    p. ej. PostgreSQL: TEST_DATABASE_URL=postgresql+psycopg2://usuario:clave@localhost/pruebas pytest"""
+    url = os.environ.get("TEST_DATABASE_URL")
+    if url:
+        return create_engine(url)
+    motor = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
 
-    @event.listens_for(engine, "connect")
+    @event.listens_for(motor, "connect")
     def _fk(conn, _):
         conn.execute("PRAGMA foreign_keys=ON")
 
+    return motor
+
+
+@pytest.fixture()
+def session_factory():
+    """BD aislada por prueba, con las categorías predeterminadas."""
+    engine = _motor_de_pruebas()
+    Base.metadata.drop_all(engine)  # en una base persistente, parte de cero
     Base.metadata.create_all(engine)
     fabrica = sessionmaker(bind=engine, autoflush=False)
     with fabrica() as s:

@@ -6,8 +6,15 @@ from pydantic import ValidationError
 from sqlalchemy import func, select
 
 from app.core.config import Settings, settings
-from app.core.security import ALGORITMO, crear_token, hashear_password, leer_token, verificar_password
-from app.models import Categoria, TipoCategoria
+from app.core.security import (
+    ALGORITMO,
+    crear_token,
+    hashear_password,
+    huella_password,
+    leer_token,
+    verificar_password,
+)
+from app.models import Categoria, TipoCategoria, Usuario
 from app.schemas.usuario import UsuarioCrear
 from app.services.categorias_default import CATEGORIAS_DEFAULT, sembrar_categorias_default
 
@@ -67,21 +74,25 @@ def test_me_sin_token_o_con_token_malo(client):
     assert client.get("/auth/me", headers={"Authorization": "Bearer basura"}).status_code == 401
 
 
-def test_token_expirado_o_de_otra_firma_se_rechaza(client):
+def test_token_expirado_o_de_otra_firma_se_rechaza(client, db):
     registrar(client)
+    ph = huella_password(db.scalar(select(Usuario)).password_hash)
     ahora = datetime.now(timezone.utc)
-    expirado = jwt.encode(
-        {"sub": "1", "iat": ahora - timedelta(hours=2), "exp": ahora - timedelta(hours=1)},
-        settings.secret_key,
-        algorithm=ALGORITMO,
-    )
-    firma_ajena = jwt.encode({"sub": "1", "exp": ahora + timedelta(hours=1)}, "otra-clave-" * 4, algorithm=ALGORITMO)
-    for t in (expirado, firma_ajena):
-        assert client.get("/auth/me", headers={"Authorization": f"Bearer {t}"}).status_code == 401
+
+    def token(exp, clave=settings.secret_key, huella=ph):
+        return jwt.encode({"sub": "1", "ph": huella, "exp": exp}, clave, algorithm=ALGORITMO)
+
+    def estado(t):
+        return client.get("/auth/me", headers={"Authorization": f"Bearer {t}"}).status_code
+
+    assert estado(token(ahora + timedelta(hours=1))) == 200                      # control: este sí entra
+    assert estado(token(ahora - timedelta(hours=1))) == 401                      # expirado
+    assert estado(token(ahora + timedelta(hours=1), clave="otra-clave-" * 4)) == 401   # firma ajena
+    assert estado(token(ahora + timedelta(hours=1), huella="x" * 16)) == 401     # huella de otra contraseña
 
 
 def test_token_de_usuario_inexistente_se_rechaza(client):
-    t = crear_token(9999)
+    t = crear_token(9999, "cualquier-hash")
     assert client.get("/auth/me", headers={"Authorization": f"Bearer {t}"}).status_code == 401
 
 
@@ -89,7 +100,9 @@ def test_password_se_guarda_hasheada():
     h = hashear_password("clave-segura-1")
     assert h != "clave-segura-1" and verificar_password("clave-segura-1", h)
     assert not verificar_password("otra", h)
-    assert leer_token(crear_token(7)) == 7 and leer_token("x") is None
+    token = crear_token(7, h)
+    assert leer_token(token) == (7, huella_password(h)) and leer_token("x") is None
+    assert huella_password(h) != huella_password(hashear_password("otra"))
 
 
 def test_categorias_default_son_idempotentes(db):

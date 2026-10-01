@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-import app.api.resumen as modulo_resumen
+import app.api.deps as modulo_deps
 from app.core.tiempo import rango_mes, sumar_meses
 
 
@@ -77,7 +77,7 @@ def test_sin_datos_todo_en_cero(client, headers):
 
 
 def test_sin_parametros_usa_el_mes_actual(client, headers, monkeypatch):
-    monkeypatch.setattr(modulo_resumen, "hoy", lambda: date(2026, 10, 15))
+    monkeypatch.setattr(modulo_deps, "hoy", lambda: date(2026, 10, 15))
     mov(client, headers, "GASTO", 5000, "2026-10-02", "Comida")
     r = get(client, headers, "mes")
     assert (r["anio"], r["mes"], D(r["gastos"])) == (2026, 10, 5000)

@@ -1,12 +1,12 @@
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Query
 from sqlalchemy import case, extract, func, select
 from sqlalchemy.orm import aliased
 
-from app.api.deps import DbDep, UsuarioActual
-from app.core.tiempo import hoy, rango_mes, sumar_meses
+from app.api.deps import AnioQ, DbDep, MesQ, UsuarioActual, periodo_o_actual
+from app.core.tiempo import rango_mes, sumar_meses
 from app.models import Categoria, Cuenta, TipoCategoria, TipoTransaccion, Transaccion
 from app.schemas.resumen import PuntoBalance, ResumenMes, SerieMensual, TotalPorCategoria
 from app.services.saldos import CENTAVOS
@@ -14,17 +14,6 @@ from app.services.saldos import CENTAVOS
 router = APIRouter(prefix="/resumen", tags=["Resumen"])
 
 T = Transaccion
-AnioQ = Annotated[int | None, Query(ge=2000, le=2100, description="Por defecto, el año actual")]
-MesQ = Annotated[int | None, Query(ge=1, le=12, description="Por defecto, el mes actual")]
-
-
-def _periodo(anio: int | None, mes: int | None) -> tuple[int, int]:
-    if (anio is None) != (mes is None):
-        raise HTTPException(422, "Envía 'anio' y 'mes' juntos, o ninguno para usar el mes actual")
-    if anio is None:
-        actual = hoy()
-        return actual.year, actual.month
-    return anio, mes
 
 
 def _dinero(valor) -> Decimal:
@@ -66,7 +55,7 @@ def _serie(db, usuario_id: int, anio_fin: int, mes_fin: int, meses: int) -> list
 @router.get("/mes", response_model=ResumenMes)
 def resumen_mes(db: DbDep, usuario: UsuarioActual, anio: AnioQ = None, mes: MesQ = None):
     """Ingresos, gastos y balance de un mes (por defecto, el actual)."""
-    anio, mes = _periodo(anio, mes)
+    anio, mes = periodo_o_actual(anio, mes)
     punto = _serie(db, usuario.id, anio, mes, 1)[0]
     return ResumenMes(anio=anio, mes=mes, ingresos=punto.ingresos, gastos=punto.gastos, balance=punto.balance)
 
@@ -84,7 +73,7 @@ def por_categoria(
 
     Con `agrupar_subcategorias` (por defecto) lo de una subcategoría se suma a su categoría padre.
     """
-    anio, mes = _periodo(anio, mes)
+    anio, mes = periodo_o_actual(anio, mes)
     inicio, fin = rango_mes(anio, mes)
     C, P = aliased(Categoria), aliased(Categoria)
     clave = P if agrupar_subcategorias else C
@@ -130,7 +119,7 @@ def serie_mensual(
 
     Siempre devuelve todos los meses del rango, en orden, con ceros donde no hubo movimientos.
     """
-    anio, mes = _periodo(anio, mes)
+    anio, mes = periodo_o_actual(anio, mes)
     return _serie(db, usuario.id, anio, mes, meses)
 
 
@@ -148,7 +137,7 @@ def evolucion_balance(
     entre cuentas propias no cambian el total. El saldo inicial de cada cuenta cuenta desde el
     primer mes del rango, porque las cuentas no guardan fecha de apertura.
     """
-    anio, mes = _periodo(anio, mes)
+    anio, mes = periodo_o_actual(anio, mes)
     serie = _serie(db, usuario.id, anio, mes, meses)
     inicio, _ = rango_mes(serie[0].anio, serie[0].mes)
 

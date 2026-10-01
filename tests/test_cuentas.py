@@ -134,6 +134,6 @@ def test_cuenta_con_recurrente_no_se_borra(client, headers, db):
     cuenta = crear(client, headers, nombre="ConRecurrente").json()
     db.add(TransaccionRecurrente(usuario_id=uid, cuenta_id=cuenta["id"], categoria_id=categoria_gasto(db).id,
                                  tipo=TipoTransaccion.GASTO, monto=Decimal("1"), frecuencia=Frecuencia.MENSUAL,
-                                 proxima_fecha=date(2026, 11, 1)))
+                                 proxima_fecha=date(2026, 11, 1), dia_ancla=1))
     db.commit()
     assert client.delete(f"/cuentas/{cuenta['id']}", headers=headers).status_code == 409

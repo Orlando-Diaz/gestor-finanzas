@@ -1,30 +1,55 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 import app.models  # noqa: F401  (registra todas las tablas en Base.metadata)
-from app.api import auth, categorias, cuentas, resumen, transacciones
-from app.core.database import Base, SessionLocal, engine
-from app.services.categorias_default import sembrar_categorias_default
+from app.api import (
+    auth,
+    categorias,
+    cuentas,
+    exportar,
+    notificaciones,
+    presupuestos,
+    recurrentes,
+    resumen,
+    transacciones,
+)
+from app.core.database import SessionLocal, engine
+from app.core.migraciones import preparar_base_de_datos
+from app.services.arranque import tareas_de_arranque
+
+logging.basicConfig(level=logging.INFO)
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    # Por ahora create_all; más adelante lo reemplazamos por migraciones con Alembic
-    Base.metadata.create_all(engine)
+    preparar_base_de_datos(engine)  # aplica las migraciones pendientes
     with SessionLocal() as db:
-        sembrar_categorias_default(db)
+        tareas_de_arranque(db)
     yield
 
 
-app = FastAPI(title="Mis Finanzas", version="0.2.0", lifespan=lifespan)
-app.include_router(auth.router)
-app.include_router(cuentas.router)
-app.include_router(categorias.router)
-app.include_router(transacciones.router)
-app.include_router(resumen.router)
+app = FastAPI(
+    title="Mis Finanzas",
+    version="0.3.0",
+    description="API de finanzas personales: cuentas, movimientos, presupuestos, recurrentes y resúmenes.",
+    lifespan=lifespan,
+)
+for router in (
+    auth.router,
+    cuentas.router,
+    categorias.router,
+    transacciones.router,
+    presupuestos.router,
+    recurrentes.router,
+    notificaciones.router,
+    resumen.router,
+    exportar.router,
+):
+    app.include_router(router)
 
 
-@app.get("/salud")
+@app.get("/salud", tags=["Salud"])
 def salud():
     return {"estado": "ok"}

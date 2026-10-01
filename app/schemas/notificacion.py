@@ -11,5 +11,10 @@ class NotificacionLeer(BaseModel):
     id: int
     tipo: TipoNotificacion
     mensaje: str
+    presupuesto_id: int | None
     leida: bool
     creada_en: datetime
+
+
+class ConteoNotificaciones(BaseModel):
+    no_leidas: int

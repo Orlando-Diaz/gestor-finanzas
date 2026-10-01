@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, Index, Numeric, String
+from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, Index, Numeric, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
@@ -29,6 +29,8 @@ class Transaccion(Base):
             "OR (tipo <> 'TRANSFERENCIA' AND cuenta_destino_id IS NULL)",
             name="ck_transaccion_transferencia_valida",
         ),
+        # Una recurrente nunca genera dos veces el mismo día (protege de procesos simultáneos)
+        UniqueConstraint("recurrente_id", "fecha", name="uq_transaccion_recurrente_fecha"),
         Index("ix_transaccion_usuario_fecha", "usuario_id", "fecha"),
         Index("ix_transaccion_usuario_categoria", "usuario_id", "categoria_id"),
     )

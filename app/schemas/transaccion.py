@@ -1,5 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -84,19 +85,35 @@ class PaginaTransacciones(BaseModel):
     por_pagina: int
 
 
-class TransaccionFiltros(BaseModel):
-    """Parámetros de consulta para el historial."""
+class FiltrosMovimientos(BaseModel):
+    """Filtros comunes del historial y de la exportación."""
 
     desde: date | None = None
     hasta: date | None = None
     tipo: TipoTransaccion | None = None
     cuenta_id: int | None = None
     categoria_id: int | None = None
-    pagina: int = Field(default=1, ge=1)
-    por_pagina: int = Field(default=20, ge=1, le=100)
 
     @model_validator(mode="after")
     def rango_valido(self):
         if self.desde and self.hasta and self.desde > self.hasta:
             raise ValueError("'desde' no puede ser posterior a 'hasta'")
         return self
+
+
+class TransaccionFiltros(FiltrosMovimientos):
+    """Parámetros de consulta para el historial."""
+
+    pagina: int = Field(default=1, ge=1)
+    por_pagina: int = Field(default=20, ge=1, le=100)
+
+
+class ExportarFiltros(FiltrosMovimientos):
+    """Parámetros de la exportación a CSV.
+
+    Los valores por defecto (`;` y coma decimal) son los que abre bien Excel con configuración
+    regional de Colombia; con `,` y `.` se obtiene el CSV estándar.
+    """
+
+    separador: Literal[",", ";"] = ";"
+    decimal: Literal[",", "."] = ","
