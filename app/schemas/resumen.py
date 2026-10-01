@@ -8,14 +8,16 @@ class ResumenMes(BaseModel):
     mes: int
     ingresos: Decimal
     gastos: Decimal
-    balance: Decimal
+    balance: Decimal  # ingresos - gastos del mes
 
 
-class GastoPorCategoria(BaseModel):
+class TotalPorCategoria(BaseModel):
     categoria_id: int
     categoria: str
+    icono: str | None
     color: str | None
     total: Decimal
+    porcentaje: Decimal  # sobre el total del mes, para la gráfica de torta
 
 
 class SerieMensual(BaseModel):
@@ -23,3 +25,12 @@ class SerieMensual(BaseModel):
     mes: int
     ingresos: Decimal
     gastos: Decimal
+    balance: Decimal
+
+
+class PuntoBalance(BaseModel):
+    """Plata total del usuario (todas sus cuentas) al cierre de un mes."""
+
+    anio: int
+    mes: int
+    balance: Decimal
