@@ -7,6 +7,8 @@ from app.models.enums import TipoTransaccion
 
 
 class TransaccionCrear(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     tipo: TipoTransaccion
     monto: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
     fecha: date
@@ -33,11 +35,32 @@ class TransaccionCrear(BaseModel):
 
 
 class TransaccionActualizar(BaseModel):
+    """El tipo no se puede cambiar: para eso se borra y se crea de nuevo."""
+
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
     monto: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
     fecha: date | None = None
     cuenta_id: int | None = None
-    categoria_id: int | None = None
+    cuenta_destino_id: int | None = None  # solo transferencias
+    categoria_id: int | None = None  # no aplica a transferencias
     nota: str | None = Field(default=None, max_length=255)
+
+
+class CuentaResumen(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+
+
+class CategoriaResumen(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    nombre: str
+    icono: str | None
+    color: str | None
 
 
 class TransaccionLeer(BaseModel):
@@ -47,11 +70,18 @@ class TransaccionLeer(BaseModel):
     tipo: TipoTransaccion
     monto: Decimal
     fecha: date
-    cuenta_id: int
-    cuenta_destino_id: int | None
-    categoria_id: int | None
     nota: str | None
+    cuenta: CuentaResumen
+    cuenta_destino: CuentaResumen | None
+    categoria: CategoriaResumen | None
     creado_en: datetime
+
+
+class PaginaTransacciones(BaseModel):
+    items: list[TransaccionLeer]
+    total: int
+    pagina: int
+    por_pagina: int
 
 
 class TransaccionFiltros(BaseModel):
@@ -64,3 +94,9 @@ class TransaccionFiltros(BaseModel):
     categoria_id: int | None = None
     pagina: int = Field(default=1, ge=1)
     por_pagina: int = Field(default=20, ge=1, le=100)
+
+    @model_validator(mode="after")
+    def rango_valido(self):
+        if self.desde and self.hasta and self.desde > self.hasta:
+            raise ValueError("'desde' no puede ser posterior a 'hasta'")
+        return self

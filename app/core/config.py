@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60
     moneda_por_defecto: str = "COP"
     entorno: str = "desarrollo"
+    bcrypt_rounds: int = 12  # las pruebas lo bajan para ir rápido; en producción debe ser >= 10
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -19,6 +20,8 @@ class Settings(BaseSettings):
             self.secret_key in (SECRET_POR_DEFECTO, "cambia-esto") or len(self.secret_key) < 32
         ):
             raise ValueError("En produccion SECRET_KEY debe ser un valor aleatorio de al menos 32 caracteres")
+        if self.entorno == "produccion" and self.bcrypt_rounds < 10:
+            raise ValueError("En produccion BCRYPT_ROUNDS debe ser al menos 10")
         return self
 
 

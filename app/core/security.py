@@ -9,7 +9,8 @@ ALGORITMO = "HS256"
 
 
 def hashear_password(password: str) -> str:
-    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    sal = bcrypt.gensalt(rounds=settings.bcrypt_rounds)
+    return bcrypt.hashpw(password.encode("utf-8"), sal).decode("utf-8")
 
 
 def verificar_password(password: str, password_hash: str) -> bool:

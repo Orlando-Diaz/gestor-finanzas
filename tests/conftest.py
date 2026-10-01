@@ -1,5 +1,10 @@
-import pytest
-from fastapi.testclient import TestClient
+import os
+
+# Debe ir antes de importar la app: hashes bcrypt baratos para que las pruebas sean rápidas
+os.environ["BCRYPT_ROUNDS"] = "4"
+
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool

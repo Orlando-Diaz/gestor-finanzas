@@ -110,8 +110,10 @@ def test_usuario_nuevo_recibe_cuenta_efectivo(client, db):
 
 def test_produccion_exige_secreto_seguro():
     with pytest.raises(ValidationError):
-        Settings(entorno="produccion", secret_key="cambia-esto")
-    Settings(entorno="produccion", secret_key="x" * 40)
+        Settings(entorno="produccion", secret_key="cambia-esto", bcrypt_rounds=12)
+    with pytest.raises(ValidationError):
+        Settings(entorno="produccion", secret_key="x" * 40, bcrypt_rounds=4)
+    Settings(entorno="produccion", secret_key="x" * 40, bcrypt_rounds=12)
 
 
 def test_esquema_password_en_bytes():
