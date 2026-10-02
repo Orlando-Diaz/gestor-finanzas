@@ -1,10 +1,18 @@
-# Mis Finanzas — API
+# Mis Finanzas
+
+![Tests](https://github.com/Orlando-Diaz/gestor-finanzas/actions/workflows/tests.yml/badge.svg)
+
 
 Backend de una app de finanzas personales: registra ingresos, gastos y transferencias entre tus cuentas
 (efectivo, Nequi, banco...), controla presupuestos por categoría y entrega los datos listos para graficar.
 
 Se usa desde el teléfono con una **app web instalable (PWA)** que sirve la propia API, pero esta es independiente
 y se puede probar completa desde la documentación interactiva (`/docs`).
+
+![Pantallas de la app: inicio, gráficas, presupuestos, metas, deudas y modo oscuro](docs/img/pantallas.png)
+
+**Demo en vivo:** <https://mis-finanzas-hhte.onrender.com> · usuario `demo@misfinanzas.app` · contraseña `demo-1234-clave`
+(el plan gratuito se duerme: la primera visita puede tardar cerca de un minuto en despertar).
 
 > **Estado:** backend, app web y configuración de despliegue completos y probados (SQLite y PostgreSQL).
 
@@ -98,6 +106,15 @@ La app es un solo servicio: la API y la PWA salen del mismo proceso. Se desplieg
 Las migraciones se aplican solas al arrancar. En el plan gratuito de Render el servicio se duerme tras unos
 15 minutos sin uso: la primera visita después tarda alrededor de un minuto en despertar.
 
+### Datos de demostración
+
+```powershell
+python scripts/sembrar_demo.py                                    # contra tu servidor local
+python scripts/sembrar_demo.py https://mis-finanzas-xxxx.onrender.com   # o contra el desplegado
+```
+
+Crea el usuario demo con 6 meses de movimientos, presupuestos, metas y deudas. Si ya existe, no duplica nada.
+
 ## Pruebas
 
 ```powershell
@@ -174,6 +191,8 @@ app/
   services/    lógica de negocio: saldos, presupuestos, recurrentes, metas, deudas, arranque
 static/        app web (PWA): index.html, manifest, service worker, css/, js/ (módulos por pantalla), fonts/, icons/
 alembic/       migraciones
+scripts/       sembrar_demo.py (datos de ejemplo)
+docs/img/      capturas del README
 tests/         pruebas (SQLite y PostgreSQL)
 ```
 
