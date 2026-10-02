@@ -1,0 +1,21 @@
+# Despliegue en Render (Blueprint). La base de datos PostgreSQL es externa (ver README, sección "Despliegue").
+services:
+  - type: web
+    name: mis-finanzas
+    runtime: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers --forwarded-allow-ips="*"
+    healthCheckPath: /salud
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: ENTORNO
+        value: produccion
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "10080"
+      - key: DATABASE_URL
+        sync: false # se pega a mano en el panel de Render

@@ -6,7 +6,7 @@ Backend de una app de finanzas personales: registra ingresos, gastos y transfere
 Se usa desde el teléfono con una **app web instalable (PWA)** que sirve la propia API, pero esta es independiente
 y se puede probar completa desde la documentación interactiva (`/docs`).
 
-> **Estado:** backend y app web completos y probados (SQLite y PostgreSQL). Siguiente etapa: despliegue.
+> **Estado:** backend, app web y configuración de despliegue completos y probados (SQLite y PostgreSQL).
 
 ## Funcionalidades
 
@@ -58,7 +58,7 @@ ipconfig          # busca la "Dirección IPv4" de tu PC, por ejemplo 192.168.1.2
 
 En el celular abre `http://192.168.1.20:8000` (Windows puede pedir permiso en el firewall).
 Para **instalarla** como app (botón "Agregar a pantalla de inicio") el navegador exige HTTPS, así que eso se hace
-una vez desplegada; en el PC sí funciona con `localhost`.
+una vez desplegada (ver *Despliegue*); en el PC sí funciona con `localhost`.
 
 > Si ya habías arrancado una versión anterior (sin migraciones), borra el archivo `mis_finanzas.db`
 > —solo tenía datos de prueba— y vuelve a arrancar.
@@ -75,6 +75,24 @@ una vez desplegada; en el PC sí funciona con `localhost`.
 | `BCRYPT_ROUNDS` | Costo del hash de contraseñas | `12` |
 
 **Nunca subas el archivo `.env` a GitHub** (ya está en `.gitignore`).
+
+## Despliegue (Render + Neon)
+
+La app es un solo servicio: la API y la PWA salen del mismo proceso. Se despliega gratis con
+[Render](https://render.com) (la app) y [Neon](https://neon.com) (PostgreSQL).
+
+> **¿Por qué no la base de Render?** Sus bases gratuitas [expiran a los 30 días](https://render.com/changelog/free-postgresql-instances-now-expire-after-30-days-previously-90)
+> (y se borran tras 14 más). Para datos financieros eso no sirve; Neon no tiene esa caducidad.
+
+1. **Base de datos**: crea un proyecto en Neon y copia la *connection string* (`postgresql://...?sslmode=require`).
+2. **Código**: sube el repositorio a GitHub (el archivo `render.yaml` ya describe el servicio).
+3. **App**: en Render, *New → Blueprint*, elige el repositorio y, cuando pida `DATABASE_URL`, pega la cadena de Neon.
+   `SECRET_KEY` se genera sola.
+4. Abre la URL `https://mis-finanzas-xxxx.onrender.com`, crea tu cuenta y, desde el celular, usa
+   *Agregar a pantalla de inicio* para instalarla.
+
+Las migraciones se aplican solas al arrancar. En el plan gratuito de Render el servicio se duerme tras unos
+15 minutos sin uso: la primera visita después tarda alrededor de un minuto en despertar.
 
 ## Pruebas
 
@@ -153,5 +171,4 @@ tests/         pruebas (SQLite y PostgreSQL)
 
 ## Pendiente
 
-- Despliegue (Render + PostgreSQL) para poder instalar la PWA con HTTPS
 - Ideas: metas de ahorro, deudas ("me deben" / "debo"), importar el extracto del banco, etiquetas

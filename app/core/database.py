@@ -8,6 +8,8 @@ _es_sqlite = settings.database_url.startswith("sqlite")
 engine = create_engine(
     settings.database_url,
     connect_args={"check_same_thread": False} if _es_sqlite else {},
+    # Bases en la nube que se "duermen" cierran conexiones: se comprueba antes de usarla
+    pool_pre_ping=not _es_sqlite,
 )
 
 if _es_sqlite:
