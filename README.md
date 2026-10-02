@@ -23,8 +23,8 @@ y se puede probar completa desde la documentación interactiva (`/docs`).
 - **Movimientos recurrentes** (arriendo, salario, suscripciones): semanal, quincenal (15 y fin de mes),
   mensual y anual. Se registran solos al arrancar, al iniciar sesión o bajo demanda.
 - **Notificaciones** (alertas de presupuesto y recurrentes registradas) con contador de no leídas.
-- **Resúmenes para gráficas**: balance del mes, gastos por categoría (torta), ingresos vs gastos por mes
-  (barras) y evolución del balance (línea).
+- **Resúmenes para gráficas**: balance del mes, gastos por categoría, gasto por día, ingresos vs gastos por mes
+  (barras) y evolución del balance (línea). La app los muestra junto con una comparación contra el mes anterior.
 - **Exportación a CSV** que abre bien en Excel (tildes, separador y decimales de Colombia).
 - **Cuenta de usuario**: registro, login con JWT, cambio de nombre y de contraseña, eliminación de la cuenta
   con todos sus datos.
@@ -131,7 +131,7 @@ Hay una prueba que falla si cambias un modelo y olvidas crear su migración.
 | Presupuestos | `GET`/`POST /presupuestos` · `POST /presupuestos/copiar` · `GET`/`PATCH`/`DELETE /presupuestos/{id}` |
 | Recurrentes | `GET`/`POST /recurrentes` · `POST /recurrentes/procesar` · `GET`/`PATCH`/`DELETE /recurrentes/{id}` |
 | Notificaciones | `GET /notificaciones` · `GET /notificaciones/conteo` · `POST /notificaciones/leer-todas` · `PATCH /notificaciones/{id}/leer` · `DELETE /notificaciones/{id}` |
-| Resumen | `GET /resumen/mes` · `/resumen/por-categoria` · `/resumen/serie-mensual` · `/resumen/evolucion-balance` |
+| Resumen | `GET /resumen/mes` · `/resumen/por-categoria` · `/resumen/por-dia` · `/resumen/serie-mensual` · `/resumen/evolucion-balance` |
 | Exportar | `GET /exportar/transacciones` (CSV) |
 | Salud | `GET /salud` |
 | App web | `GET /` (PWA), `/manifest.webmanifest`, `/sw.js` |

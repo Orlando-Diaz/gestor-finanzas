@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 from typing import Annotated
 
@@ -8,7 +9,7 @@ from sqlalchemy.orm import aliased
 from app.api.deps import AnioQ, DbDep, MesQ, UsuarioActual, periodo_o_actual
 from app.core.tiempo import rango_mes, sumar_meses
 from app.models import Categoria, Cuenta, TipoCategoria, TipoTransaccion, Transaccion
-from app.schemas.resumen import PuntoBalance, ResumenMes, SerieMensual, TotalPorCategoria
+from app.schemas.resumen import PuntoBalance, PuntoDia, ResumenMes, SerieMensual, TotalPorCategoria
 from app.services.saldos import CENTAVOS
 
 router = APIRouter(prefix="/resumen", tags=["Resumen"])
@@ -104,6 +105,33 @@ def por_categoria(
             porcentaje=(_dinero(t) * 100 / suma).quantize(CENTAVOS),
         )
         for cid, nombre, icono, color, t in filas
+    ]
+
+
+@router.get("/por-dia", response_model=list[PuntoDia])
+def por_dia(db: DbDep, usuario: UsuarioActual, anio: AnioQ = None, mes: MesQ = None):
+    """Ingresos y gastos de cada día del mes (gráfica de barras diaria).
+
+    Siempre devuelve todos los días del mes, en orden, con ceros donde no hubo movimientos.
+    """
+    anio, mes = periodo_o_actual(anio, mes)
+    inicio, fin = rango_mes(anio, mes)
+    ingresos, gastos = _ingresos_gastos()
+    filas = db.execute(
+        select(T.fecha, ingresos, gastos)
+        .where(
+            T.usuario_id == usuario.id,
+            T.tipo != TipoTransaccion.TRANSFERENCIA,
+            T.fecha >= inicio,
+            T.fecha < fin,
+        )
+        .group_by(T.fecha)
+    ).all()
+    por_fecha = {f: (_dinero(i), _dinero(g)) for f, i, g in filas}
+    cero = Decimal("0.00")
+    return [
+        PuntoDia(fecha=d, ingresos=por_fecha.get(d, (cero, cero))[0], gastos=por_fecha.get(d, (cero, cero))[1])
+        for d in (inicio + timedelta(days=k) for k in range((fin - inicio).days))
     ]
 
 

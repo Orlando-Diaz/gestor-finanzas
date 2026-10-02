@@ -52,12 +52,12 @@ def datos(client, headers):
 
 # ---------- generales ----------
 
-@pytest.mark.parametrize("ruta", ["mes", "por-categoria", "serie-mensual", "evolucion-balance"])
+@pytest.mark.parametrize("ruta", ["mes", "por-categoria", "por-dia", "serie-mensual", "evolucion-balance"])
 def test_requieren_autenticacion(client, ruta):
     assert client.get(f"/resumen/{ruta}").status_code == 401
 
 
-@pytest.mark.parametrize("ruta", ["mes", "por-categoria", "serie-mensual", "evolucion-balance"])
+@pytest.mark.parametrize("ruta", ["mes", "por-categoria", "por-dia", "serie-mensual", "evolucion-balance"])
 @pytest.mark.parametrize("params", [{"mes": 13}, {"mes": 0}, {"anio": 1999, "mes": 1}, {"anio": 2026}, {"mes": 5}])
 def test_periodo_invalido(client, headers, ruta, params):
     assert client.get(f"/resumen/{ruta}", headers=headers, params=params).status_code == 422
@@ -198,3 +198,45 @@ def test_evolucion_balance_cuenta_archivada_sigue_sumando(client, headers):
     client.patch(f"/cuentas/{vieja}", headers=headers, json={"archivada": True})
     r = get(client, headers, "evolucion-balance", meses=1, anio=2026, mes=10)
     assert D(r[0]["balance"]) == 70000
+
+
+# ---------- por día ----------
+
+def test_por_dia_devuelve_todos_los_dias_del_mes(client, headers, datos):
+    dias = get(client, headers, "por-dia", anio=2026, mes=10)
+    assert len(dias) == 31
+    assert [d["fecha"] for d in dias] == [f"2026-10-{n:02d}" for n in range(1, 32)]
+    por_fecha = {d["fecha"]: d for d in dias}
+    assert D(por_fecha["2026-10-01"]["ingresos"]) == 2500000 and D(por_fecha["2026-10-01"]["gastos"]) == 0
+    assert D(por_fecha["2026-10-03"]["gastos"]) == 18000
+    assert D(por_fecha["2026-10-31"]["gastos"]) == 82000  # último día incluido
+    assert D(por_fecha["2026-10-10"]["gastos"]) == 0       # la transferencia no cuenta
+    assert D(por_fecha["2026-10-10"]["ingresos"]) == 0
+
+
+def test_por_dia_suma_lo_mismo_que_el_resumen_del_mes(client, headers, datos):
+    dias = get(client, headers, "por-dia", anio=2026, mes=10)
+    mes = get(client, headers, "mes", anio=2026, mes=10)
+    assert sum(D(d["gastos"]) for d in dias) == D(mes["gastos"])
+    assert sum(D(d["ingresos"]) for d in dias) == D(mes["ingresos"])
+
+
+def test_por_dia_suma_varios_movimientos_del_mismo_dia(client, headers):
+    mov(client, headers, "GASTO", 10000, "2026-02-05", "Comida")
+    mov(client, headers, "GASTO", 5500, "2026-02-05", "Transporte")
+    dias = get(client, headers, "por-dia", anio=2026, mes=2)
+    assert len(dias) == 28
+    assert D(dias[4]["gastos"]) == 15500
+
+
+def test_por_dia_mes_bisiesto_y_aislado_por_usuario(client, headers, headers_otro):
+    mov(client, headers, "GASTO", 1000, "2028-02-29", "Comida")
+    assert len(get(client, headers, "por-dia", anio=2028, mes=2)) == 29
+    otro = get(client, headers_otro, "por-dia", anio=2028, mes=2)
+    assert all(D(d["gastos"]) == 0 for d in otro)
+
+
+def test_por_dia_sin_parametros_usa_el_mes_actual(client, headers, monkeypatch):
+    monkeypatch.setattr(modulo_deps, "hoy", lambda: date(2026, 11, 15))
+    dias = get(client, headers, "por-dia")
+    assert len(dias) == 30 and dias[0]["fecha"] == "2026-11-01"

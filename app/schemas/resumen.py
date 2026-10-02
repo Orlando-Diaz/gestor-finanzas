@@ -1,3 +1,4 @@
+from datetime import date
 from decimal import Decimal
 
 from pydantic import BaseModel
@@ -34,3 +35,10 @@ class PuntoBalance(BaseModel):
     anio: int
     mes: int
     balance: Decimal
+
+
+class PuntoDia(BaseModel):
+    """Lo que entró y salió en un día (las transferencias no cuentan)."""
+    fecha: date
+    ingresos: Decimal
+    gastos: Decimal

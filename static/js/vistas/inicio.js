@@ -1,7 +1,7 @@
 import { api } from "../api.js";
-import { barrasMensuales, lineaBalance } from "../graficas.js";
+import { barrasDiarias, barrasMensuales, lineaBalance } from "../graficas.js";
 import { store } from "../store.js";
-import { $, dinero, esc, nombreMes, primerDiaMes, ultimoDiaMes } from "../util.js";
+import { $, dinero, esc, hoyISO, mismoPeriodo, nombreMes, periodoActual, primerDiaMes, sumarMes, ultimoDiaMes } from "../util.js";
 import { abrirFormularioMovimiento, conectarFilas, conectarMes, estado, htmlFilaMovimiento, htmlSelectorMes } from "./comun.js";
 
 const MAX_CATEGORIAS = 6;
@@ -26,15 +26,63 @@ function htmlCategorias(filas) {
     .join("");
 }
 
+const mesSolo = (p) => {
+  const m = nombreMes(p).split(" ")[0];
+  return m.charAt(0).toUpperCase() + m.slice(1);
+};
+
+/** Este mes contra el anterior, categoría por categoría (las 6 con más gasto entre los dos meses). */
+function htmlComparativo(actual, anterior, p) {
+  const previo = new Map(anterior.map((c) => [c.categoria_id, c]));
+  const filas = new Map();
+  for (const c of actual) filas.set(c.categoria_id, { ...c, ahora: Number(c.total), antes: 0 });
+  for (const c of anterior) {
+    const f = filas.get(c.categoria_id) ?? { ...c, ahora: 0, antes: 0 };
+    f.antes = Number(previo.get(c.categoria_id).total);
+    filas.set(c.categoria_id, f);
+  }
+  const lista = [...filas.values()].sort((a, b) => b.ahora + b.antes - (a.ahora + a.antes)).slice(0, 6);
+  if (!lista.length) return `<p class="vacio">Sin gastos en estos dos meses.</p>`;
+  const max = Math.max(...lista.map((f) => Math.max(f.ahora, f.antes)));
+  const delta = (f) => {
+    if (f.antes === 0) return `<span class="delta">Nuevo</span>`;
+    if (f.ahora === 0) return `<span class="delta">Sin gastos</span>`;
+    const pct = Math.round(((f.ahora - f.antes) / f.antes) * 100);
+    if (pct === 0) return `<span class="delta">Igual</span>`;
+    return `<span class="delta">${pct > 0 ? "▲ +" : "▼ −"}${Math.abs(pct)}%</span>`;
+  };
+  const barra = (v, clase) =>
+    `<span class="dupla"><span class="barra"><i class="${clase}" style="width:${v ? Math.max(2, (v / max) * 100) : 0}%"></i></span><span class="v">${dinero(v)}</span></span>`;
+  return `<div class="leyenda"><span style="--c:var(--s2)">${esc(mesSolo(p))}</span><span style="--c:var(--tinta-3)">${esc(mesSolo(sumarMes(p, -1)))}</span></div>` +
+    lista
+      .map(
+        (f) => `<div class="comp-fila"><div class="comp-cab"><span aria-hidden="true">${esc(f.icono || "•")}</span><span class="n">${esc(f.categoria)}</span>${delta(f)}</div>
+          ${barra(f.ahora, "ahora")}${barra(f.antes, "antes")}</div>`,
+      )
+      .join("");
+}
+
+function resumenDias(dias, p) {
+  const gastos = dias.map((d) => Number(d.gastos));
+  const total = gastos.reduce((a, b) => a + b, 0);
+  if (!total) return "";
+  const transcurridos = mismoPeriodo(p, periodoActual()) ? Number(hoyISO().slice(8)) : dias.length;
+  const mayor = gastos.indexOf(Math.max(...gastos));
+  return `<p class="pequeno suave" style="margin:-4px 0 8px">Promedio: <b style="color:var(--tinta)">${dinero(total / transcurridos)}</b> por día · Día más alto: el ${mayor + 1} (${dinero(gastos[mayor])})</p>`;
+}
+
 export default {
   titulo: () => `Hola, ${store.usuario?.nombre?.split(" ")[0] ?? ""}`,
   async render(main) {
     const p = estado.periodo;
     const q = { anio: p.anio, mes: p.mes };
     main.innerHTML = `<div class="esqueleto" style="height:60px"></div><div class="esqueleto" style="height:190px"></div><div class="esqueleto"></div>`;
-    const [resumen, porCat, serie, evol, movs] = await Promise.all([
+    const prev = sumarMes(p, -1);
+    const [resumen, porCat, porCatPrev, dias, serie, evol, movs] = await Promise.all([
       api.get("/resumen/mes", q),
       api.get("/resumen/por-categoria", q),
+      api.get("/resumen/por-categoria", { anio: prev.anio, mes: prev.mes }),
+      api.get("/resumen/por-dia", q),
       api.get("/resumen/serie-mensual", { ...q, meses: 6 }),
       api.get("/resumen/evolucion-balance", { ...q, meses: 6 }),
       api.get("/transacciones", { desde: primerDiaMes(p), hasta: ultimoDiaMes(p), por_pagina: 5 }),
@@ -60,6 +108,8 @@ export default {
           : `<section class="tarjeta"><div class="vacio"><strong>Empieza creando una cuenta</strong>Registra dónde tienes tu plata: efectivo, Nequi, banco…<br><a class="btn" href="#/cuentas">Crear cuenta</a></div></section>`
       }
       <section class="tarjeta"><h2>En qué gastaste</h2>${htmlCategorias(porCat)}</section>
+      <section class="tarjeta"><h2>Comparado con el mes pasado</h2>${htmlComparativo(porCat, porCatPrev, p)}</section>
+      <section class="tarjeta"><h2>Gasto por día</h2>${resumenDias(dias, p)}<div class="grafica" id="g-dias"></div></section>
       <section class="tarjeta"><h2>Ingresos y gastos por mes</h2>
         <div class="leyenda"><span style="--c:var(--s1)">Ingresos</span><span style="--c:var(--s2)">Gastos</span></div><div class="grafica" id="g-barras"></div></section>
       <section class="tarjeta"><h2>Cómo crece tu plata</h2><div class="grafica" id="g-linea"></div></section>
@@ -70,6 +120,7 @@ export default {
             : `<div class="vacio"><strong>Nada registrado este mes</strong>Anota tu primer gasto o ingreso.<br><button class="btn" data-nuevo>Registrar movimiento</button></div>`
         }</section>`;
 
+    barrasDiarias($("#g-dias", main), dias);
     barrasMensuales($("#g-barras", main), serie);
     lineaBalance($("#g-linea", main), evol);
     conectarMes(main, p, (nuevo) => {

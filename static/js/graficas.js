@@ -146,3 +146,40 @@ export function lineaBalance(cont, puntos) {
     ${tablaAccesible("Plata total al cierre de cada mes", ["Mes", "Total"], puntos.map((p) => [`${mesCorto(p.anio, p.mes)} ${p.anio}`, dinero(p.balance)]))}`;
   interactiva(cont, zonas);
 }
+
+/** Barras de gasto por cada día del mes. */
+export function barrasDiarias(cont, dias) {
+  const valores = dias.map((d) => Number(d.gastos));
+  const max = Math.max(0, ...valores);
+  if (max === 0) {
+    cont.innerHTML = `<p class="vacio">Sin gastos este mes.</p>`;
+    return;
+  }
+  const esc_ = escala(0, max);
+  const y = (v) => M.t + PH - ((v - esc_.lo) / (esc_.hi - esc_.lo)) * PH;
+  const base = y(0);
+  const paso = PW / dias.length;
+  const ancho = Math.max(3, paso * 0.68);
+  const etiqueta = (iso) =>
+    new Date(...iso.split("-").map((n, i) => (i === 1 ? Number(n) - 1 : Number(n)))).toLocaleDateString("es-CO", { weekday: "short", day: "numeric", month: "short" });
+  const zonas = [];
+  const barras = dias
+    .map((d, i) => {
+      const cx = M.l + paso * i + paso / 2;
+      const v = valores[i];
+      zonas.push({ x: cx, y: v > 0 ? y(v) : base, html: `<b>${esc(etiqueta(d.fecha))}</b>${fila("Gastos", dinero(v))}` });
+      const alto = base - y(v);
+      const r = Math.min(2.5, ancho / 2, alto);
+      const rect = alto > 0
+        ? `<path d="M${cx - ancho / 2},${base} V${base - alto + r} Q${cx - ancho / 2},${base - alto} ${cx - ancho / 2 + r},${base - alto} H${cx + ancho / 2 - r} Q${cx + ancho / 2},${base - alto} ${cx + ancho / 2},${base - alto + r} V${base} Z" fill="var(--s2)"/>`
+        : "";
+      const n = i + 1;
+      const rotulo = n === 1 || n % 5 === 0 ? `<text x="${cx}" y="${H - 6}" text-anchor="middle">${n}</text>` : "";
+      return rect + rotulo;
+    })
+    .join("");
+  cont.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gasto de cada día del mes">
+      ${eje(esc_, y)}<line class="cursor" y1="${M.t}" y2="${base}" stroke="var(--tinta-3)" stroke-dasharray="3 3" opacity="0"/>${barras}</svg>
+    ${tablaAccesible("Gasto por día", ["Día", "Gastos"], dias.map((d) => [d.fecha, dinero(d.gastos)]))}`;
+  interactiva(cont, zonas);
+}

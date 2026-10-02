@@ -335,3 +335,15 @@ main { padding: 4px 16px calc(112px + env(safe-area-inset-bottom)); display: gri
   body { padding-top: 12px; }
 }
 .menu svg { width: 18px; height: 18px; color: var(--tinta-3); }
+
+/* ---------- Comparativo con el mes anterior ---------- */
+.comp-fila { padding: 8px 0; }
+.comp-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.comp-cab .n { font-weight: 650; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.delta { font-size: 0.85rem; font-weight: 700; color: var(--tinta-2); white-space: nowrap; }
+.dupla { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; min-height: 20px; }
+.dupla .barra { height: 8px; border-radius: 4px; background: var(--superficie-2); overflow: hidden; }
+.dupla .barra i { display: block; height: 100%; border-radius: 4px; }
+.dupla .barra i.ahora { background: var(--s2); }
+.dupla .barra i.antes { background: var(--tinta-3); }
+.dupla .v { font-size: 0.85rem; color: var(--tinta-2); min-width: 84px; text-align: right; }
