@@ -3,13 +3,16 @@
 Backend de una app de finanzas personales: registra ingresos, gastos y transferencias entre tus cuentas
 (efectivo, Nequi, banco...), controla presupuestos por categoría y entrega los datos listos para graficar.
 
-Está pensado para usarse desde el teléfono (PWA, en desarrollo) pero la API es independiente y se puede
-probar completa desde la documentación interactiva (`/docs`).
+Se usa desde el teléfono con una **app web instalable (PWA)** que sirve la propia API, pero esta es independiente
+y se puede probar completa desde la documentación interactiva (`/docs`).
 
-> **Estado:** backend completo y probado (SQLite y PostgreSQL). Siguiente etapa: frontend PWA y despliegue.
+> **Estado:** backend y app web completos y probados (SQLite y PostgreSQL). Siguiente etapa: despliegue.
 
 ## Funcionalidades
 
+- **App móvil (PWA)**: instalable en el celular, con modo claro/oscuro, inicio con el total de tu plata,
+  gráficas, historial, presupuestos, cuentas, categorías, recurrentes, avisos y exportación. Sin librerías
+  externas ni paso de compilación: HTML, CSS y JavaScript puros en `static/`.
 - **Cuentas propias** por usuario (efectivo, bancaria, billetera digital, tarjeta de crédito). El saldo
   de cada una se **calcula** a partir del saldo inicial y los movimientos, nunca se guarda.
 - **Movimientos**: ingresos, gastos y transferencias entre cuentas, con filtros (fechas, tipo, cuenta,
@@ -41,8 +44,21 @@ copy .env.example .env
 uvicorn app.main:app --reload
 ```
 
-Abre <http://127.0.0.1:8000/docs>: ahí puedes registrarte, pulsar **Authorize** para iniciar sesión
-y probar todos los endpoints. Al arrancar, la app aplica las migraciones y crea las categorías predeterminadas.
+- **La app**: abre <http://127.0.0.1:8000/> y crea tu cuenta.
+- **La documentación de la API**: <http://127.0.0.1:8000/docs> (pulsa **Authorize** para iniciar sesión y probar los endpoints).
+
+Al arrancar, la app aplica las migraciones y crea las categorías predeterminadas.
+
+### Probarla en tu celular (misma red Wi-Fi)
+
+```powershell
+uvicorn app.main:app --host 0.0.0.0 --reload
+ipconfig          # busca la "Dirección IPv4" de tu PC, por ejemplo 192.168.1.20
+```
+
+En el celular abre `http://192.168.1.20:8000` (Windows puede pedir permiso en el firewall).
+Para **instalarla** como app (botón "Agregar a pantalla de inicio") el navegador exige HTTPS, así que eso se hace
+una vez desplegada; en el PC sí funciona con `localhost`.
 
 > Si ya habías arrancado una versión anterior (sin migraciones), borra el archivo `mis_finanzas.db`
 > —solo tenía datos de prueba— y vuelve a arrancar.
@@ -53,7 +69,7 @@ y probar todos los endpoints. Al arrancar, la app aplica las migraciones y crea 
 |---|---|---|
 | `DATABASE_URL` | Base de datos (`sqlite:///./mis_finanzas.db` o `postgresql+psycopg2://...`) | SQLite local |
 | `SECRET_KEY` | Firma de los tokens. Genera uno: `python -c "import secrets; print(secrets.token_urlsafe(48))"` | valor de desarrollo |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Duración de la sesión | `60` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | Duración de la sesión (en el celular conviene larga: `10080` = 7 días) | `60` |
 | `MONEDA_POR_DEFECTO` | Moneda de los usuarios nuevos | `COP` |
 | `ENTORNO` | Con `produccion` se exige un `SECRET_KEY` seguro y `BCRYPT_ROUNDS` ≥ 10 | `desarrollo` |
 | `BCRYPT_ROUNDS` | Costo del hash de contraseñas | `12` |
@@ -100,6 +116,7 @@ Hay una prueba que falla si cambias un modelo y olvidas crear su migración.
 | Resumen | `GET /resumen/mes` · `/resumen/por-categoria` · `/resumen/serie-mensual` · `/resumen/evolucion-balance` |
 | Exportar | `GET /exportar/transacciones` (CSV) |
 | Salud | `GET /salud` |
+| App web | `GET /` (PWA), `/manifest.webmanifest`, `/sw.js` |
 
 ## Decisiones de diseño
 
@@ -115,6 +132,9 @@ Hay una prueba que falla si cambias un modelo y olvidas crear su migración.
   el límite se reinician.
 - **Seguridad**: contraseñas con bcrypt, JWT con huella de la contraseña (cambiarla cierra las sesiones abiertas),
   login que no revela qué correos existen, exportación CSV protegida contra inyección de fórmulas.
+- **App sin dependencias de compilación**: la PWA son módulos ES nativos; las gráficas son SVG propios y las
+  fuentes viajan con la app, así que abre también con poca señal. El service worker solo guarda la "carcasa":
+  los datos financieros nunca se almacenan en caché.
 - **Zona horaria**: "hoy" se calcula en hora de Colombia (UTC-5, sin horario de verano).
 
 ## Estructura
@@ -126,12 +146,12 @@ app/
   models/      tablas (SQLAlchemy)
   schemas/     validación de entrada y salida (Pydantic)
   services/    lógica de negocio: saldos, presupuestos, recurrentes, arranque
+static/        app web (PWA): index.html, manifest, service worker, css/, js/ (módulos por pantalla), fonts/, icons/
 alembic/       migraciones
 tests/         pruebas (SQLite y PostgreSQL)
 ```
 
 ## Pendiente
 
-- Frontend PWA (mobile-first, instalable) servido desde `static/`
-- Despliegue (Render + PostgreSQL)
+- Despliegue (Render + PostgreSQL) para poder instalar la PWA con HTTPS
 - Ideas: metas de ahorro, deudas ("me deben" / "debo"), importar el extracto del banco, etiquetas

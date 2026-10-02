@@ -1,7 +1,9 @@
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 
 import app.models  # noqa: F401  (registra todas las tablas en Base.metadata)
 from app.api import (
@@ -32,7 +34,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Mis Finanzas",
-    version="0.3.0",
+    version="0.4.0",
     description="API de finanzas personales: cuentas, movimientos, presupuestos, recurrentes y resúmenes.",
     lifespan=lifespan,
 )
@@ -53,3 +55,8 @@ for router in (
 @app.get("/salud", tags=["Salud"])
 def salud():
     return {"estado": "ok"}
+
+
+# La app web (PWA). Va al final para que las rutas de la API tengan prioridad.
+DIRECTORIO_WEB = Path(__file__).resolve().parent.parent / "static"
+app.mount("/", StaticFiles(directory=DIRECTORIO_WEB, html=True), name="web")
