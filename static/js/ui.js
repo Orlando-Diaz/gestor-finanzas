@@ -43,6 +43,16 @@ export function hoja(titulo, montar) {
   return cerrar;
 }
 
+/** Muestra un mensaje de error justo encima de `boton` (reemplaza el anterior). */
+export function errorEn(cuerpo, boton, mensaje) {
+  cuerpo.querySelector(".error")?.remove();
+  const p = document.createElement("p");
+  p.className = "error";
+  p.setAttribute("role", "alert");
+  p.textContent = mensaje;
+  boton.before(p);
+}
+
 /** Ejecuta `tarea` con el botón bloqueado; si falla, muestra el error dentro de `cuerpo`. */
 export async function enviando(boton, cuerpo, tarea) {
   const textoOriginal = boton.textContent;

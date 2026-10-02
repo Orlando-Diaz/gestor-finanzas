@@ -25,6 +25,10 @@ y se puede probar completa desde la documentación interactiva (`/docs`).
 - **Notificaciones** (alertas de presupuesto y recurrentes registradas) con contador de no leídas.
 - **Resúmenes para gráficas**: balance del mes, gastos por categoría, gasto por día, ingresos vs gastos por mes
   (barras) y evolución del balance (línea). La app los muestra junto con una comparación contra el mes anterior.
+- **Metas de ahorro**: nombre, monto objetivo y fecha opcional; aportes y retiros con historial, progreso,
+  cuota mensual sugerida para llegar a tiempo y aviso al cumplirla. Es un registro: no mueve el saldo de las cuentas.
+- **Deudas ("me deben" / "debo")**: quién, cuánto, vencimiento opcional, pagos parciales, estado (pendiente,
+  vencida, saldada) y un resumen de cuánto te deben y cuánto debes.
 - **Exportación a CSV** que abre bien en Excel (tildes, separador y decimales de Colombia).
 - **Cuenta de usuario**: registro, login con JWT, cambio de nombre y de contraseña, eliminación de la cuenta
   con todos sus datos.
@@ -131,6 +135,8 @@ Hay una prueba que falla si cambias un modelo y olvidas crear su migración.
 | Presupuestos | `GET`/`POST /presupuestos` · `POST /presupuestos/copiar` · `GET`/`PATCH`/`DELETE /presupuestos/{id}` |
 | Recurrentes | `GET`/`POST /recurrentes` · `POST /recurrentes/procesar` · `GET`/`PATCH`/`DELETE /recurrentes/{id}` |
 | Notificaciones | `GET /notificaciones` · `GET /notificaciones/conteo` · `POST /notificaciones/leer-todas` · `PATCH /notificaciones/{id}/leer` · `DELETE /notificaciones/{id}` |
+| Metas | `GET`/`POST /metas` · `GET`/`PATCH`/`DELETE /metas/{id}` · `POST /metas/{id}/aportes` · `DELETE /metas/{id}/aportes/{aporte_id}` |
+| Deudas | `GET`/`POST /deudas` · `GET /deudas/resumen` · `GET`/`PATCH`/`DELETE /deudas/{id}` · `POST /deudas/{id}/pagos` · `DELETE /deudas/{id}/pagos/{pago_id}` |
 | Resumen | `GET /resumen/mes` · `/resumen/por-categoria` · `/resumen/por-dia` · `/resumen/serie-mensual` · `/resumen/evolucion-balance` |
 | Exportar | `GET /exportar/transacciones` (CSV) |
 | Salud | `GET /salud` |
@@ -153,6 +159,8 @@ Hay una prueba que falla si cambias un modelo y olvidas crear su migración.
 - **App sin dependencias de compilación**: la PWA son módulos ES nativos; las gráficas son SVG propios y las
   fuentes viajan con la app, así que abre también con poca señal. El service worker solo guarda la "carcasa":
   los datos financieros nunca se almacenan en caché.
+- **Metas y deudas son registros**: no tocan el saldo de las cuentas. Lo ahorrado es aportes menos retiros (no se
+  puede retirar más de lo ahorrado) y los pagos de una deuda no pueden superar lo pendiente.
 - **Zona horaria**: "hoy" se calcula en hora de Colombia (UTC-5, sin horario de verano).
 
 ## Estructura
@@ -163,7 +171,7 @@ app/
   core/        configuración, base de datos, seguridad, fechas, migraciones
   models/      tablas (SQLAlchemy)
   schemas/     validación de entrada y salida (Pydantic)
-  services/    lógica de negocio: saldos, presupuestos, recurrentes, arranque
+  services/    lógica de negocio: saldos, presupuestos, recurrentes, metas, deudas, arranque
 static/        app web (PWA): index.html, manifest, service worker, css/, js/ (módulos por pantalla), fonts/, icons/
 alembic/       migraciones
 tests/         pruebas (SQLite y PostgreSQL)
@@ -171,4 +179,4 @@ tests/         pruebas (SQLite y PostgreSQL)
 
 ## Pendiente
 
-- Ideas: metas de ahorro, deudas ("me deben" / "debo"), importar el extracto del banco, etiquetas
+- Ideas: vincular metas y deudas con cuentas y movimientos, importar el extracto del banco, etiquetas

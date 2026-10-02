@@ -6,14 +6,16 @@ import { aviso } from "./ui.js";
 import { abrirFormularioMovimiento } from "./vistas/comun.js";
 import cuentas from "./vistas/cuentas.js";
 import categorias from "./vistas/categorias.js";
+import deudas from "./vistas/deudas.js";
 import inicio from "./vistas/inicio.js";
 import mas from "./vistas/mas.js";
+import metas from "./vistas/metas.js";
 import movimientos from "./vistas/movimientos.js";
 import notificaciones from "./vistas/notificaciones.js";
 import presupuestos from "./vistas/presupuestos.js";
 import recurrentes from "./vistas/recurrentes.js";
 
-const RUTAS = { inicio, movimientos, presupuestos, mas, cuentas, categorias, recurrentes, avisos: notificaciones };
+const RUTAS = { inicio, movimientos, presupuestos, mas, cuentas, categorias, recurrentes, metas, deudas, avisos: notificaciones };
 const PESTANAS = [["inicio", "Inicio"], ["movimientos", "Movimientos"], null, ["presupuestos", "Presupuestos"], ["mas", "Más"]];
 const raiz = $("#app");
 let rutaActual = "inicio";

@@ -10,7 +10,9 @@ from app.api import (
     auth,
     categorias,
     cuentas,
+    deudas,
     exportar,
+    metas,
     notificaciones,
     presupuestos,
     recurrentes,
@@ -34,7 +36,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     title="Mis Finanzas",
-    version="0.4.0",
+    version="0.5.0",
     description="API de finanzas personales: cuentas, movimientos, presupuestos, recurrentes y resúmenes.",
     lifespan=lifespan,
 )
@@ -48,6 +50,8 @@ for router in (
     notificaciones.router,
     resumen.router,
     exportar.router,
+    metas.router,
+    deudas.router,
 ):
     app.include_router(router)
 

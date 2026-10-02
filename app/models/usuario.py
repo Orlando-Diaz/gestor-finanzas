@@ -26,3 +26,5 @@ class Usuario(Base):
     transacciones = relationship("Transaccion", back_populates="usuario", cascade="all, delete-orphan")
     presupuestos = relationship("Presupuesto", back_populates="usuario", cascade="all, delete-orphan")
     notificaciones = relationship("Notificacion", back_populates="usuario", cascade="all, delete-orphan")
+    metas = relationship("Meta", back_populates="usuario", cascade="all, delete-orphan")
+    deudas = relationship("Deuda", back_populates="usuario", cascade="all, delete-orphan")

@@ -31,3 +31,13 @@ class TipoNotificacion(str, enum.Enum):
     PRESUPUESTO_EXCEDIDO = "PRESUPUESTO_EXCEDIDO"
     RECURRENTE_REGISTRADA = "RECURRENTE_REGISTRADA"
     INFO = "INFO"
+
+
+class TipoAporte(str, enum.Enum):
+    APORTE = "APORTE"  # apartas plata para la meta
+    RETIRO = "RETIRO"  # sacas plata de la meta
+
+
+class TipoDeuda(str, enum.Enum):
+    ME_DEBEN = "ME_DEBEN"  # presté plata
+    DEBO = "DEBO"  # me prestaron plata

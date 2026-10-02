@@ -60,6 +60,9 @@ export function etiquetaDia(iso) {
 export const fechaLarga = (iso) =>
   aFecha(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
 
+export const fechaCorta = (iso) =>
+  aFecha(iso).toLocaleDateString("es-CO", { day: "numeric", month: "short" }).replace(".", "");
+
 export const primerDiaMes = ({ anio, mes }) => `${anio}-${String(mes).padStart(2, "0")}-01`;
 export function ultimoDiaMes({ anio, mes }) {
   const d = new Date(anio, mes, 0).getDate();
@@ -108,4 +111,4 @@ export const ICONOS = {
   cerrar: trazo('<path d="M6 6l12 12M18 6L6 18"/>'),
   chevron: trazo('<path d="M9 5l7 7-7 7"/>'),
 };
-export const emojiMenu = { cuentas: "👛", categorias: "🏷️", recurrentes: "🔁", notificaciones: "🔔", exportar: "📄", perfil: "👤", salir: "🚪" };
+export const emojiMenu = { metas: "🎯", deudas: "🤝", cuentas: "👛", categorias: "🏷️", recurrentes: "🔁", notificaciones: "🔔", exportar: "📄", perfil: "👤", salir: "🚪" };

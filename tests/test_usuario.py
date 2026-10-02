@@ -8,6 +8,8 @@ from app.core import tiempo
 from app.models import (
     Categoria,
     Cuenta,
+    Deuda,
+    Meta,
     Notificacion,
     Presupuesto,
     Transaccion,
@@ -99,6 +101,10 @@ def poblar(client, headers):
     client.post("/recurrentes", headers=headers, json={
         "tipo": "GASTO", "monto": "800000", "cuenta_id": efectivo, "categoria_id": cat_id(client, headers, "Arriendo"),
         "frecuencia": "MENSUAL", "proxima_fecha": "2026-10-01"})
+    meta = client.post("/metas", headers=headers, json={"nombre": "Viaje", "monto_objetivo": "500000"}).json()["id"]
+    client.post(f"/metas/{meta}/aportes", headers=headers, json={"tipo": "APORTE", "monto": "100000"})
+    deuda = client.post("/deudas", headers=headers, json={"tipo": "ME_DEBEN", "persona": "Carlos", "monto_total": "200000"}).json()["id"]
+    client.post(f"/deudas/{deuda}/pagos", headers=headers, json={"monto": "50000"})
 
 
 def contar(db, modelo, uid):
@@ -111,18 +117,18 @@ def test_eliminar_cuenta_borra_todo_lo_del_usuario_y_nada_mas(client, headers, h
     poblar(client, headers_otro)
     uid = client.get("/auth/me", headers=headers).json()["id"]
     otro = client.get("/auth/me", headers=headers_otro).json()["id"]
-    for modelo in (Cuenta, Transaccion, Presupuesto, Notificacion, TransaccionRecurrente, Categoria):
+    for modelo in (Cuenta, Transaccion, Presupuesto, Notificacion, TransaccionRecurrente, Categoria, Meta, Deuda):
         assert contar(db, modelo, uid) > 0, modelo  # el escenario sí llena cada tabla
 
     assert client.post("/auth/eliminar-cuenta", headers=headers, json={"password": CLAVE}).status_code == 204
 
     db.expire_all()
     assert db.get(Usuario, uid) is None
-    for modelo in (Cuenta, Transaccion, Presupuesto, Notificacion, TransaccionRecurrente, Categoria):
+    for modelo in (Cuenta, Transaccion, Presupuesto, Notificacion, TransaccionRecurrente, Categoria, Meta, Deuda):
         assert contar(db, modelo, uid) == 0, modelo
     # el otro usuario y las categorías predeterminadas siguen intactos
     assert db.get(Usuario, otro) is not None
-    for modelo in (Cuenta, Transaccion, Presupuesto, Notificacion, TransaccionRecurrente, Categoria):
+    for modelo in (Cuenta, Transaccion, Presupuesto, Notificacion, TransaccionRecurrente, Categoria, Meta, Deuda):
         assert contar(db, modelo, otro) > 0, modelo
     assert db.scalar(select(func.count()).select_from(Categoria).where(Categoria.usuario_id.is_(None))) == len(CATEGORIAS_DEFAULT)
     # y el acceso desaparece

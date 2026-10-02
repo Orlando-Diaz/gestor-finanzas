@@ -2,6 +2,7 @@ import { api } from "../api.js";
 import { barrasDiarias, barrasMensuales, lineaBalance } from "../graficas.js";
 import { store } from "../store.js";
 import { $, dinero, esc, hoyISO, mismoPeriodo, nombreMes, periodoActual, primerDiaMes, sumarMes, ultimoDiaMes } from "../util.js";
+import { htmlMeta, abrirMeta } from "./metas.js";
 import { abrirFormularioMovimiento, conectarFilas, conectarMes, estado, htmlFilaMovimiento, htmlSelectorMes } from "./comun.js";
 
 const MAX_CATEGORIAS = 6;
@@ -78,7 +79,7 @@ export default {
     const q = { anio: p.anio, mes: p.mes };
     main.innerHTML = `<div class="esqueleto" style="height:60px"></div><div class="esqueleto" style="height:190px"></div><div class="esqueleto"></div>`;
     const prev = sumarMes(p, -1);
-    const [resumen, porCat, porCatPrev, dias, serie, evol, movs] = await Promise.all([
+    const [resumen, porCat, porCatPrev, dias, serie, evol, movs, metas, deudas] = await Promise.all([
       api.get("/resumen/mes", q),
       api.get("/resumen/por-categoria", q),
       api.get("/resumen/por-categoria", { anio: prev.anio, mes: prev.mes }),
@@ -86,7 +87,11 @@ export default {
       api.get("/resumen/serie-mensual", { ...q, meses: 6 }),
       api.get("/resumen/evolucion-balance", { ...q, meses: 6 }),
       api.get("/transacciones", { desde: primerDiaMes(p), hasta: ultimoDiaMes(p), por_pagina: 5 }),
+      api.get("/metas").catch(() => []),
+      api.get("/deudas/resumen").catch(() => null),
     ]);
+    const metasActivas = metas.filter((m) => !m.cumplida).slice(0, 2);
+    const hayDeudas = deudas && (Number(deudas.me_deben) > 0 || Number(deudas.debo) > 0);
     const total = store.cuentas.reduce((s, c) => s + Number(c.saldo_actual), 0);
     const balance = Number(resumen.balance);
 
@@ -106,6 +111,21 @@ export default {
               .map((c) => `<a class="cuenta-chip" role="listitem" href="#/cuentas" style="text-decoration:none;color:inherit"><small>${esc(c.nombre)}</small><b>${dinero(c.saldo_actual)}</b></a>`)
               .join("")}</div>`
           : `<section class="tarjeta"><div class="vacio"><strong>Empieza creando una cuenta</strong>Registra dónde tienes tu plata: efectivo, Nequi, banco…<br><a class="btn" href="#/cuentas">Crear cuenta</a></div></section>`
+      }
+      ${
+        metasActivas.length
+          ? `<section class="tarjeta"><div class="seccion-fila"><h2>Tus metas</h2><a class="enlace" href="#/metas" style="text-decoration:none">Ver todas</a></div>
+              <div style="display:grid;gap:10px">${metasActivas.map((m) => htmlMeta(m, true)).join("")}</div></section>`
+          : ""
+      }
+      ${
+        hayDeudas
+          ? `<a class="tarjeta" href="#/deudas" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;text-decoration:none;color:inherit">
+              <span><small class="suave">Te deben</small><b style="display:block;font-size:1.1rem">${dinero(deudas.me_deben)}</b></span>
+              <span><small class="suave">Debes</small><b style="display:block;font-size:1.1rem">${dinero(deudas.debo)}</b></span>
+              ${deudas.vencidas ? `<span class="pequeno" style="grid-column:1/-1;color:var(--gasto)">${deudas.vencidas} ${deudas.vencidas === 1 ? "deuda vencida" : "deudas vencidas"}</span>` : ""}
+            </a>`
+          : ""
       }
       <section class="tarjeta"><h2>En qué gastaste</h2>${htmlCategorias(porCat)}</section>
       <section class="tarjeta"><h2>Comparado con el mes pasado</h2>${htmlComparativo(porCat, porCatPrev, p)}</section>
@@ -128,6 +148,7 @@ export default {
       this.render(main);
     });
     conectarFilas(main, (id) => movs.items.find((t) => t.id === id));
+    main.querySelectorAll("[data-meta]").forEach((b) => (b.onclick = async () => abrirMeta(await api.get(`/metas/${b.dataset.meta}`), () => this.render(main))));
     $("[data-nuevo]", main)?.addEventListener("click", () => abrirFormularioMovimiento());
   },
 };
