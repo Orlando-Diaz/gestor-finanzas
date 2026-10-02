@@ -13,6 +13,31 @@ export function fijarMoneda(codigo) {
 }
 export const dinero = (v) => formatoMoneda.format(Number(v) || 0);
 
+/* Modo incógnito: oculta los saldos (total y cuentas). Se recuerda en este dispositivo. */
+const CLAVE_OCULTO = "mf.oculto";
+const MASCARA = "$ ••••••";
+let oculto = false;
+try {
+  oculto = localStorage.getItem(CLAVE_OCULTO) === "1";
+} catch {
+  /* sin almacenamiento: queda visible */
+}
+export const saldosOcultos = () => oculto;
+export function alternarSaldos() {
+  oculto = !oculto;
+  try {
+    localStorage.setItem(CLAVE_OCULTO, oculto ? "1" : "0");
+  } catch {
+    /* no pasa nada: vale para esta sesión */
+  }
+  return oculto;
+}
+/** Un saldo que respeta el modo incógnito; `pintarSaldos` lo actualiza sin volver a pintar la pantalla. */
+export const htmlSaldo = (v) => `<span data-saldo="${Number(v) || 0}">${oculto ? MASCARA : dinero(v)}</span>`;
+export function pintarSaldos(raiz = document) {
+  raiz.querySelectorAll("[data-saldo]").forEach((el) => (el.textContent = oculto ? MASCARA : dinero(el.dataset.saldo)));
+}
+
 /** 1.250.000 -> "1,3 M"; 85.000 -> "85 mil" (para los ejes de las gráficas). */
 export function dineroCorto(v) {
   const n = Math.abs(Number(v) || 0);
@@ -109,6 +134,8 @@ export const ICONOS = {
   izquierda: trazo('<path d="M15 5l-7 7 7 7"/>'),
   derecha: trazo('<path d="M9 5l7 7-7 7"/>'),
   cerrar: trazo('<path d="M6 6l12 12M18 6L6 18"/>'),
+  ojo: trazo('<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'),
+  ojo_cerrado: trazo('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.7C3.9 8.5 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 4.4-1"/>'),
   chevron: trazo('<path d="M9 5l7 7-7 7"/>'),
 };
-export const emojiMenu = { metas: "🎯", deudas: "🤝", cuentas: "👛", categorias: "🏷️", recurrentes: "🔁", notificaciones: "🔔", exportar: "📄", perfil: "👤", salir: "🚪" };
+export const emojiMenu = { gastos: "📊", metas: "🎯", deudas: "🤝", cuentas: "👛", categorias: "🏷️", recurrentes: "🔁", notificaciones: "🔔", exportar: "📄", perfil: "👤", salir: "🚪" };

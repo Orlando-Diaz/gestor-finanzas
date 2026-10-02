@@ -248,7 +248,8 @@ main { padding: 4px 16px calc(112px + env(safe-area-inset-bottom)); display: gri
   background: var(--superficie); font-size: 1rem;
 }
 .entrada:focus { outline: none; border-color: var(--billete); box-shadow: 0 0 0 3px color-mix(in srgb, var(--billete) 25%, transparent); }
-.dos { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.dos { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+.dos .entrada { min-width: 0; }
 .error { color: var(--gasto); font-size: 0.9rem; font-weight: 600; margin: -4px 0 12px; }
 .segmentos { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--superficie-2); border-radius: 14px; padding: 4px; gap: 4px; }
 .segmentos button { min-height: 40px; border: 0; border-radius: 10px; background: transparent; font-weight: 700; color: var(--tinta-2); }
@@ -347,3 +348,13 @@ main { padding: 4px 16px calc(112px + env(safe-area-inset-bottom)); display: gri
 .dupla .barra i.ahora { background: var(--s2); }
 .dupla .barra i.antes { background: var(--tinta-3); }
 .dupla .v { font-size: 0.85rem; color: var(--tinta-2); min-width: 84px; text-align: right; }
+
+/* ---------- Modo incógnito y gastos por categoría ---------- */
+.billete button.total { display: flex; align-items: center; gap: 12px; width: 100%; padding: 0; border: 0; background: none; color: inherit; text-align: left; cursor: pointer; }
+.billete .total .ojo { display: inline-grid; opacity: 0.75; flex: none; }
+.billete .total .ojo svg { width: 24px; height: 24px; }
+button.cat-fila { width: 100%; border: 0; background: none; color: inherit; text-align: left; font: inherit; }
+button.cat-fila:active { background: var(--superficie-2); }
+.cat-fila .chev { display: none; }
+.resumen-gastos { display: grid; gap: 2px; }
+.resumen-gastos .grande { font-family: var(--f-titulo); font-weight: 750; font-size: 2rem; letter-spacing: -0.02em; line-height: 1.1; }

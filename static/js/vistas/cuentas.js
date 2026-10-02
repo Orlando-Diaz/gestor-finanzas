@@ -1,6 +1,6 @@
 import { api } from "../api.js";
 import { recargarCuentas, store } from "../store.js";
-import { $, $$, TIPOS_CUENTA, dinero, esc } from "../util.js";
+import { $, $$, TIPOS_CUENTA, dinero, esc, htmlSaldo } from "../util.js";
 import { aviso, confirmar, enviando, hoja } from "../ui.js";
 import { avisarCambio } from "./comun.js";
 
@@ -78,7 +78,7 @@ export default {
               (c) => `<li><button class="fila-mov" data-cuenta="${c.id}" ${c.archivada ? 'style="opacity:.6"' : ""}>
               <span class="ico" aria-hidden="true">${ICONO[c.tipo]}</span>
               <span><span class="t" style="display:block">${esc(c.nombre)}</span><span class="s" style="display:block">${esc(TIPOS_CUENTA[c.tipo].split(" (")[0])}${c.archivada ? " · Archivada" : ""}</span></span>
-              <span class="monto">${dinero(c.saldo_actual)}</span></button></li>`,
+              <span class="monto">${htmlSaldo(c.saldo_actual)}</span></button></li>`,
             )
             .join("")}</ul></section>`
         : `<section class="tarjeta"><div class="vacio"><strong>Aún no tienes cuentas</strong>Crea una por cada lugar donde guardas plata: efectivo, Nequi, tu banco…</div></section>`

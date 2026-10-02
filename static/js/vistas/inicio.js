@@ -1,7 +1,7 @@
 import { api } from "../api.js";
 import { barrasDiarias, barrasMensuales, lineaBalance } from "../graficas.js";
 import { store } from "../store.js";
-import { $, dinero, esc, hoyISO, mismoPeriodo, nombreMes, periodoActual, primerDiaMes, sumarMes, ultimoDiaMes } from "../util.js";
+import { $, ICONOS, alternarSaldos, dinero, esc, htmlSaldo, pintarSaldos, saldosOcultos, hoyISO, mismoPeriodo, nombreMes, periodoActual, primerDiaMes, sumarMes, ultimoDiaMes } from "../util.js";
 import { htmlMeta, abrirMeta } from "./metas.js";
 import { abrirFormularioMovimiento, conectarFilas, conectarMes, estado, htmlFilaMovimiento, htmlSelectorMes } from "./comun.js";
 
@@ -98,7 +98,7 @@ export default {
     main.innerHTML = `${htmlSelectorMes(p)}
       <section class="billete" aria-label="Resumen de tu plata">
         <p class="rotulo">Tienes en total</p>
-        <p class="total ${total < 0 ? "negativo" : ""}">${dinero(total)}</p>
+        <button type="button" class="total ${total < 0 ? "negativo" : ""}" data-ocultar aria-pressed="${saldosOcultos()}" aria-label="${saldosOcultos() ? "Mostrar saldos" : "Ocultar saldos"}">${htmlSaldo(total)}<span class="ojo" aria-hidden="true">${saldosOcultos() ? ICONOS.ojo_cerrado : ICONOS.ojo}</span></button>
         <div class="fila">
           <div><small>Ingresos de ${esc(nombreMes(p).split(" ")[0])}</small><b>${dinero(resumen.ingresos)}</b></div>
           <div><small>Gastos de ${esc(nombreMes(p).split(" ")[0])}</small><b>${dinero(resumen.gastos)}</b></div>
@@ -108,7 +108,7 @@ export default {
       ${
         store.cuentas.length
           ? `<div class="cuentas" role="list" aria-label="Tus cuentas">${store.cuentas
-              .map((c) => `<a class="cuenta-chip" role="listitem" href="#/cuentas" style="text-decoration:none;color:inherit"><small>${esc(c.nombre)}</small><b>${dinero(c.saldo_actual)}</b></a>`)
+              .map((c) => `<a class="cuenta-chip" role="listitem" href="#/cuentas" style="text-decoration:none;color:inherit"><small>${esc(c.nombre)}</small><b>${htmlSaldo(c.saldo_actual)}</b></a>`)
               .join("")}</div>`
           : `<section class="tarjeta"><div class="vacio"><strong>Empieza creando una cuenta</strong>Registra dónde tienes tu plata: efectivo, Nequi, banco…<br><a class="btn" href="#/cuentas">Crear cuenta</a></div></section>`
       }
@@ -147,6 +147,14 @@ export default {
       estado.periodo = nuevo;
       this.render(main);
     });
+    const botonOjo = $("[data-ocultar]", main);
+    botonOjo.onclick = () => {
+      const oculto = alternarSaldos();
+      pintarSaldos(main);
+      botonOjo.setAttribute("aria-pressed", oculto);
+      botonOjo.setAttribute("aria-label", oculto ? "Mostrar saldos" : "Ocultar saldos");
+      $(".ojo", botonOjo).innerHTML = oculto ? ICONOS.ojo_cerrado : ICONOS.ojo;
+    };
     conectarFilas(main, (id) => movs.items.find((t) => t.id === id));
     main.querySelectorAll("[data-meta]").forEach((b) => (b.onclick = async () => abrirMeta(await api.get(`/metas/${b.dataset.meta}`), () => this.render(main))));
     $("[data-nuevo]", main)?.addEventListener("click", () => abrirFormularioMovimiento());

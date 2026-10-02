@@ -112,6 +112,7 @@ export default {
   render(main) {
     main.innerHTML = `<section class="tarjeta" style="display:grid;gap:2px"><p style="font-family:var(--f-titulo);font-size:1.25rem;font-weight:700">${esc(store.usuario.nombre)}</p><p class="suave pequeno">${esc(store.usuario.email)}</p></section>
       <nav class="menu" aria-label="Más opciones">
+        <a href="#/gastos">${fila(emojiMenu.gastos, "Gastos por categoría")}</a>
         <a href="#/metas">${fila(emojiMenu.metas, "Metas de ahorro")}</a>
         <a href="#/deudas">${fila(emojiMenu.deudas, "Deudas: me deben / debo")}</a>
         <a href="#/cuentas">${fila(emojiMenu.cuentas, "Mis cuentas")}</a>
