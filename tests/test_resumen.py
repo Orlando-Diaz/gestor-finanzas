@@ -137,6 +137,32 @@ def test_subcategorias_se_suman_a_su_padre(client, headers):
         ("Transporte", 40000), ("Comida", 20000), ("Domicilios", 10000)}
 
 
+def test_por_categoria_por_rango_de_fechas(client, headers, datos):
+    # el rango cruza de septiembre a noviembre e incluye ambos extremos (30-sep y 01-nov)
+    r = get(client, headers, "por-categoria", desde="2026-09-30", hasta="2026-11-01")
+    assert [(c["categoria"], D(c["total"])) for c in r] == [("Transporte", 82000), ("Comida", 19998)]
+
+    solo_un_dia = get(client, headers, "por-categoria", desde="2026-10-31", hasta="2026-10-31")
+    assert [(c["categoria"], D(c["total"])) for c in solo_un_dia] == [("Transporte", 82000)]
+
+    ingresos = get(client, headers, "por-categoria", desde="2026-01-01", hasta="2026-12-31", tipo="INGRESO")
+    assert [(c["categoria"], D(c["total"])) for c in ingresos] == [("Salario", 2500000)]
+
+
+def test_por_categoria_rango_sin_movimientos(client, headers, datos):
+    assert get(client, headers, "por-categoria", desde="2025-01-01", hasta="2025-12-31") == []
+
+
+@pytest.mark.parametrize("params", [
+    {"desde": "2026-10-01"},                                  # falta 'hasta'
+    {"hasta": "2026-10-31"},                                  # falta 'desde'
+    {"desde": "2026-10-31", "hasta": "2026-10-01"},           # al revés
+    {"desde": "2026-10-01", "hasta": "2026-10-31", "anio": 2026, "mes": 10},  # mezcla los dos modos
+])
+def test_por_categoria_rango_invalido(client, headers, params):
+    assert client.get("/resumen/por-categoria", headers=headers, params=params).status_code == 422
+
+
 def test_por_categoria_tipo_invalido(client, headers):
     assert client.get("/resumen/por-categoria", headers=headers, params={"tipo": "OTRO"}).status_code == 422
 

@@ -138,4 +138,4 @@ export const ICONOS = {
   ojo_cerrado: trazo('<path d="M3 3l18 18"/><path d="M10.6 5.1A10 10 0 0 1 12 5c6.4 0 10 7 10 7a17 17 0 0 1-3.2 4.2M6.6 6.7C3.9 8.5 2 12 2 12s3.6 7 10 7a9.7 9.7 0 0 0 4.4-1"/>'),
   chevron: trazo('<path d="M9 5l7 7-7 7"/>'),
 };
-export const emojiMenu = { gastos: "📊", metas: "🎯", deudas: "🤝", cuentas: "👛", categorias: "🏷️", recurrentes: "🔁", notificaciones: "🔔", exportar: "📄", perfil: "👤", salir: "🚪" };
+export const emojiMenu = { gastos: "📊", ingresos: "💰", metas: "🎯", deudas: "🤝", cuentas: "👛", categorias: "🏷️", recurrentes: "🔁", notificaciones: "🔔", exportar: "📄", perfil: "👤", salir: "🚪" };

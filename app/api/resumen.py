@@ -1,8 +1,8 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from decimal import Decimal
 from typing import Annotated
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import case, extract, func, select
 from sqlalchemy.orm import aliased
 
@@ -69,13 +69,26 @@ def por_categoria(
     mes: MesQ = None,
     tipo: TipoCategoria = TipoCategoria.GASTO,
     agrupar_subcategorias: bool = True,
+    desde: date | None = None,
+    hasta: date | None = None,
 ):
-    """Total por categoría en un mes, de mayor a menor (gráfica de torta).
+    """Total por categoría de gastos (o de ingresos, con `tipo=INGRESO`), de mayor a menor.
 
-    Con `agrupar_subcategorias` (por defecto) lo de una subcategoría se suma a su categoría padre.
+    El periodo es un mes (`anio` y `mes`; por defecto el actual) o un rango de fechas, ambas
+    incluidas (`desde` y `hasta`). Con `agrupar_subcategorias` (por defecto) lo de una
+    subcategoría se suma a su categoría padre.
     """
-    anio, mes = periodo_o_actual(anio, mes)
-    inicio, fin = rango_mes(anio, mes)
+    if desde is not None or hasta is not None:
+        if desde is None or hasta is None:
+            raise HTTPException(422, "Envía 'desde' y 'hasta' juntos")
+        if anio is not None or mes is not None:
+            raise HTTPException(422, "Usa 'anio' y 'mes', o 'desde' y 'hasta', pero no los dos")
+        if desde > hasta:
+            raise HTTPException(422, "'desde' no puede ser posterior a 'hasta'")
+        inicio, fin = desde, hasta + timedelta(days=1)  # `fin` es exclusivo
+    else:
+        anio, mes = periodo_o_actual(anio, mes)
+        inicio, fin = rango_mes(anio, mes)
     C, P = aliased(Categoria), aliased(Categoria)
     clave = P if agrupar_subcategorias else C
     total = func.sum(T.monto)

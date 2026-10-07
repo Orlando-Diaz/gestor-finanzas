@@ -1,6 +1,6 @@
 // Service worker: guarda la "carcasa" de la app para que abra sin conexión.
 // Los datos (la API) NUNCA se guardan aquí: siempre vienen del servidor.
-const CACHE = "mis-finanzas-v3";
+const CACHE = "mis-finanzas-v4";
 const CARCASA = [
   "/",
   "/manifest.webmanifest",
@@ -20,11 +20,13 @@ const CARCASA = [
   "/js/vistas/cuentas.js",
   "/js/vistas/deudas.js",
   "/js/vistas/gastos.js",
+  "/js/vistas/ingresos.js",
   "/js/vistas/inicio.js",
   "/js/vistas/mas.js",
   "/js/vistas/metas.js",
   "/js/vistas/movimientos.js",
   "/js/vistas/notificaciones.js",
+  "/js/vistas/porCategoria.js",
   "/js/vistas/presupuestos.js",
   "/js/vistas/recurrentes.js",
 ];

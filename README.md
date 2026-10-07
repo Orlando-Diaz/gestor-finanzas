@@ -31,7 +31,7 @@ y se puede probar completa desde la documentación interactiva (`/docs`).
 - **Movimientos recurrentes** (arriendo, salario, suscripciones): semanal, quincenal (15 y fin de mes),
   mensual y anual. Se registran solos al arrancar, al iniciar sesión o bajo demanda.
 - **Notificaciones** (alertas de presupuesto y recurrentes registradas) con contador de no leídas.
-- **Resúmenes para gráficas**: balance del mes, gastos por categoría, gasto por día, ingresos vs gastos por mes
+- **Resúmenes para gráficas**: balance del mes, gastos e ingresos por categoría (por mes o rango de fechas), gasto por día, ingresos vs gastos por mes
   (barras) y evolución del balance (línea). La app los muestra junto con una comparación contra el mes anterior.
 - **Metas de ahorro**: nombre, monto objetivo y fecha opcional; aportes y retiros con historial, progreso,
   cuota mensual sugerida para llegar a tiempo y aviso al cumplirla. Es un registro: no mueve el saldo de las cuentas.
