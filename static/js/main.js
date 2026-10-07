@@ -83,6 +83,12 @@ async function pintarRuta() {
   const main = $("#contenido");
   if (!main) return;
   const miVersion = ++versionPintado;
+  // Cada pantalla se dibuja en su propio contenedor. Si el usuario cambia de pantalla mientras otra
+  // sigue cargando, esa carga lenta escribe en un contenedor ya descartado y no pisa la pantalla nueva.
+  // "display: contents" hace que los hijos sigan siendo, para el diseño de <main>, hijos directos.
+  const pantalla = document.createElement("div");
+  pantalla.style.display = "contents";
+  main.replaceChildren(pantalla);
   $("#titulo").textContent = vista.titulo();
   document.title = `${vista.titulo()} · Mis Finanzas`;
   $("#atras").hidden = !vista.atras;
@@ -91,11 +97,11 @@ async function pintarRuta() {
     activa ? p.setAttribute("aria-current", "page") : p.removeAttribute("aria-current");
   });
   try {
-    await vista.render(main);
+    await vista.render(pantalla);
   } catch (e) {
     if (miVersion !== versionPintado) return;
-    main.innerHTML = `<section class="tarjeta"><div class="vacio"><strong>No se pudo cargar</strong>${esc(e.message)}<br><button class="btn" id="reintentar">Reintentar</button></div></section>`;
-    $("#reintentar").onclick = pintarRuta;
+    pantalla.innerHTML = `<section class="tarjeta"><div class="vacio"><strong>No se pudo cargar</strong>${esc(e.message)}<br><button class="btn" id="reintentar">Reintentar</button></div></section>`;
+    $("#reintentar", pantalla).onclick = pintarRuta;
   }
 }
 
