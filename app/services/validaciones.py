@@ -4,7 +4,7 @@ no estar archivadas y (en categorías) coincidir con el tipo de movimiento."""
 from fastapi import HTTPException
 from sqlalchemy import or_, select
 
-from app.models import Categoria, Cuenta, TipoTransaccion
+from app.models import Categoria, CategoriaOculta, Cuenta, TipoTransaccion
 
 
 def error_422(mensaje: str) -> HTTPException:
@@ -20,6 +20,11 @@ def cuenta_valida(db, usuario, cuenta_id: int) -> Cuenta:
     return cuenta
 
 
+def categorias_ocultas(db, usuario) -> set[int]:
+    """Ids de las predeterminadas que este usuario quitó de su lista."""
+    return set(db.scalars(select(CategoriaOculta.categoria_id).where(CategoriaOculta.usuario_id == usuario.id)))
+
+
 def categoria_valida(db, usuario, categoria_id: int, tipo: TipoTransaccion) -> Categoria:
     categoria = db.scalar(
         select(Categoria).where(
@@ -29,7 +34,7 @@ def categoria_valida(db, usuario, categoria_id: int, tipo: TipoTransaccion) -> C
     )
     if categoria is None:
         raise error_422(f"La categoría {categoria_id} no existe")
-    if categoria.archivada:
+    if categoria.archivada or categoria.id in categorias_ocultas(db, usuario):
         raise error_422(f"La categoría '{categoria.nombre}' está archivada")
     if categoria.tipo.value != tipo.value:
         raise error_422(f"La categoría '{categoria.nombre}' es de {categoria.tipo.value}, no de {tipo.value}")

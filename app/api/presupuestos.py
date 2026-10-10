@@ -6,7 +6,7 @@ from app.api.deps import AnioQ, DbDep, MesQ, UsuarioActual, periodo_o_actual
 from app.models import Presupuesto, TipoTransaccion
 from app.schemas.presupuesto import CopiarPresupuestos, PresupuestoActualizar, PresupuestoCrear, PresupuestoLeer
 from app.services.presupuestos import calcular_progreso, evaluar_presupuesto, gastado_en_periodo, reiniciar_alertas
-from app.services.validaciones import categoria_valida
+from app.services.validaciones import categoria_valida, categorias_ocultas
 
 router = APIRouter(prefix="/presupuestos", tags=["Presupuestos"])
 
@@ -88,13 +88,14 @@ def copiar(datos: CopiarPresupuestos, db: DbDep, usuario: UsuarioActual):
             )
         )
     )
+    ocultas = categorias_ocultas(db, usuario)
     nuevos = [
         Presupuesto(
             usuario_id=usuario.id, categoria_id=o.categoria_id, monto_limite=o.monto_limite,
             umbral_alerta=o.umbral_alerta, anio=datos.a_anio, mes=datos.a_mes,
         )
         for o in origen
-        if o.categoria_id not in existentes and not o.categoria.archivada
+        if o.categoria_id not in existentes and not o.categoria.archivada and o.categoria_id not in ocultas
     ]
     db.add_all(nuevos)
     db.flush()

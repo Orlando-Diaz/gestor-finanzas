@@ -29,3 +29,17 @@ class Categoria(Base):
 
     usuario = relationship("Usuario", back_populates="categorias")
     subcategorias = relationship("Categoria", backref="padre", remote_side=[id])
+
+
+class CategoriaOculta(Base):
+    """Predeterminada que un usuario quitó de su lista.
+
+    Las predeterminadas son filas compartidas, así que "eliminarla" no puede borrarla:
+    se registra aquí que ESE usuario ya no la quiere ver. Los demás no se enteran y sus
+    movimientos anteriores siguen apuntando a la categoría.
+    """
+
+    __tablename__ = "categorias_ocultas"
+
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id", ondelete="CASCADE"), primary_key=True)
+    categoria_id: Mapped[int] = mapped_column(ForeignKey("categorias.id", ondelete="CASCADE"), primary_key=True)

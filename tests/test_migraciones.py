@@ -11,7 +11,7 @@ from app.core.migraciones import configuracion_alembic, preparar_base_de_datos
 TABLAS = {
     "usuarios", "cuentas", "categorias", "transacciones", "presupuestos",
     "transacciones_recurrentes", "notificaciones",
-    "metas", "aportes_meta", "deudas", "pagos_deuda",
+    "metas", "aportes_meta", "deudas", "pagos_deuda", "categorias_ocultas",
 }
 
 
@@ -44,7 +44,7 @@ def test_preparar_es_idempotente(motor):
     preparar_base_de_datos(motor)
     preparar_base_de_datos(motor)
     with motor.connect() as c:
-        assert c.execute(text("select version_num from alembic_version")).scalars().all() == ["0002"]
+        assert c.execute(text("select version_num from alembic_version")).scalars().all() == ["0003"]
 
 
 def test_subir_bajar_y_volver_a_subir(motor):

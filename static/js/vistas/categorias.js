@@ -56,8 +56,9 @@ export default {
   titulo: () => "Categorías",
   atras: true,
   async render(main) {
-    const todas = await api.get("/categorias");
-    const lista = todas.filter((c) => c.tipo === tipoActual);
+    const todas = await api.get("/categorias", { incluir_archivadas: true });
+    const lista = todas.filter((c) => c.tipo === tipoActual && !c.archivada);
+    const quitadas = todas.filter((c) => c.tipo === tipoActual && c.predeterminada && c.archivada);
     const recargar = async () => {
       await recargarCategorias();
       avisarCambio();
@@ -66,14 +67,40 @@ export default {
         ${[["GASTO", "Gastos"], ["INGRESO", "Ingresos"]].map(([v, n]) => `<button data-tipo="${v}" aria-pressed="${v === tipoActual}">${n}</button>`).join("")}</div>
       <section class="tarjeta" style="padding:4px 16px"><ul class="lista">${lista
         .map(
-          (c) => `<li><button class="fila-mov" ${c.predeterminada ? "disabled" : `data-cat="${c.id}"`} style="--c:${esc(c.color || "#6b7280")}">
+          (c) => `<li><button class="fila-mov" ${c.predeterminada ? `data-pred="${c.id}"` : `data-cat="${c.id}"`} style="--c:${esc(c.color || "#6b7280")}">
             <span class="ico" aria-hidden="true">${esc(c.icono || "•")}</span>
-            <span class="t">${esc(c.nombre)}</span><span class="s">${c.predeterminada ? "Predeterminada" : "Editar"}</span></button></li>`,
+            <span class="t">${esc(c.nombre)}</span><span class="s">${c.predeterminada ? "Predeterminada · Quitar" : "Editar"}</span></button></li>`,
         )
         .join("")}</ul></section>
-      <button class="btn bloque" data-nueva>Nueva categoría de ${tipoActual === "GASTO" ? "gasto" : "ingreso"}</button>`;
+      <button class="btn bloque" data-nueva>Nueva categoría de ${tipoActual === "GASTO" ? "gasto" : "ingreso"}</button>
+      ${quitadas.length ? `<button class="btn secundario bloque" data-restaurar style="margin-top:8px">Restaurar predeterminadas (${quitadas.length})</button>` : ""}`;
     $$("[data-tipo]", main).forEach((b) => (b.onclick = () => { tipoActual = b.dataset.tipo; this.render(main); }));
     $$("[data-cat]", main).forEach((b) => (b.onclick = () => formulario(todas.find((c) => c.id === Number(b.dataset.cat)), () => recargar().then(() => this.render(main)))));
+    $$("[data-pred]", main).forEach(
+      (b) =>
+        (b.onclick = () => {
+          const c = todas.find((x) => x.id === Number(b.dataset.pred));
+          confirmar(
+            `¿Quitar «${c.nombre}»?`,
+            "Dejará de aparecer en tu lista y al registrar movimientos. Tus movimientos anteriores se conservan, y puedes recuperarla con «Restaurar predeterminadas».",
+            "Quitar",
+            async () => {
+              await api.borrar(`/categorias/${c.id}`);
+              await recargar();
+              aviso("Categoría quitada");
+              this.render(main);
+            },
+          );
+        }),
+    );
+    $("[data-restaurar]", main)?.addEventListener("click", (e) =>
+      enviando(e.target, main, async () => {
+        const r = await api.post("/categorias/restaurar-predeterminadas", {});
+        await recargar();
+        aviso(r.restauradas ? "Categorías restauradas" : "Ya tienes categorías propias con esos nombres");
+        this.render(main);
+      }),
+    );
     $("[data-nueva]", main).onclick = () => formulario(null, () => recargar().then(() => this.render(main)));
   },
 };

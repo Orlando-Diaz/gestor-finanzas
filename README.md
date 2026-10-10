@@ -25,7 +25,8 @@ y se puede probar completa desde la documentación interactiva (`/docs`).
   de cada una se **calcula** a partir del saldo inicial y los movimientos, nunca se guarda.
 - **Movimientos**: ingresos, gastos y transferencias entre cuentas, con filtros (fechas, tipo, cuenta,
   categoría) y paginación.
-- **Categorías**: 18 predeterminadas compartidas + las propias de cada usuario, con un nivel de subcategorías.
+- **Categorías**: 18 predeterminadas + las propias de cada usuario, con un nivel de subcategorías. Cada usuario
+  puede quitar las predeterminadas que no quiera (y restaurarlas) sin afectar a los demás ni a su historial.
 - **Presupuestos mensuales** por categoría con progreso (gastado, restante, estado `OK`/`ALERTA`/`EXCEDIDO`),
   alertas automáticas y copia del mes anterior.
 - **Movimientos recurrentes** (arriendo, salario, suscripciones): semanal, quincenal (15 y fin de mes),
